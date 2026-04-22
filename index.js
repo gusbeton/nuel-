@@ -38,26 +38,28 @@ function getPanelButtons() {
 
 
 // =======================
-// 📦 EMBED INVENTORY (POLISHED)
+// 📦 EMBED INVENTORY (FOCUS STATUS)
 // =======================
 function generateInventoryEmbed(nama, jumlah, status, keterangan) {
   const tanggal = new Date().toLocaleDateString("id-ID");
 
   return new EmbedBuilder()
     .setColor(status === "MASUK" ? 0x16a34a : 0xdc2626)
-    .setTitle("📦 INVENTORY CARD")
+    .setTitle(
+      status === "MASUK"
+        ? "🟢 BARANG MASUK"
+        : "🔴 BARANG KELUAR"
+    )
     .setDescription(
+      `📅 **${tanggal}**\n` +
+
+      `━━━━━━━━━━━━━━━━━━\n\n` +
+
       `**Nama Barang :** ${nama}\n` +
-      `**Jumlah      :** ${jumlah}\n` +
-      `**Status      :** ${status}\n\n` +
+      `**Jumlah      :** ${jumlah}\n\n` +
 
-      `━━━━━━━━━━━━━━━━━━\n` +
-
-      `📅 **TANGGAL**\n` +
-      `➡️ **${tanggal}**\n\n` +
-
-      `📝 **KETERANGAN**\n` +
-      `➡️ **${keterangan}**`
+      `📝 **Keterangan**\n` +
+      `${keterangan}`
     )
     .setFooter({ text: "BETLEHEM • Inventory System" });
 }
