@@ -1,7 +1,7 @@
 {
-  "name": "inventory-bot",
+  "name": "betlehem-inventory-bot",
   "version": "1.0.0",
-  "description": "Inventory Discord Bot BETLEHEM",
+  "description": "Inventory Bot BETLEHEM",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
