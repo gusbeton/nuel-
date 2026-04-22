@@ -97,7 +97,7 @@ async function sendPanelIfNotExist(client) {
     )
     .setThumbnail(icon)
     .setFooter({
-      text: "BETLEHEM • Inventory System",
+      text: "BETLEHEM • Copyright ©️2018 - BTHL",
       iconURL: icon || undefined
     });
 
