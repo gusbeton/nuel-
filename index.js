@@ -42,10 +42,10 @@ function getPanelButtons() {
 
 
 // =======================
-// 📦 EMBED FINAL
+// 📦 EMBED FLEXIBLE
 // =======================
 function generateEmbed(nama, jumlah, status, keterangan, image) {
-  return new EmbedBuilder()
+  const embed = new EmbedBuilder()
     .setColor(status === "MASUK" ? 0x16a34a : 0xdc2626)
     .setTitle(status === "MASUK" ? "🟢 BARANG MASUK" : "🔴 BARANG KELUAR")
     .setDescription(
@@ -53,10 +53,14 @@ function generateEmbed(nama, jumlah, status, keterangan, image) {
       `━━━━━━━━━━━━━━━━━━\n\n` +
       `**Nama Barang :** ${nama}\n` +
       `**Jumlah      :** ${jumlah}\n` +
-      `**Keterangan  :** ${keterangan}`
+      `**Keterangan  :** ${keterangan}\n` +
+      `**Foto        :** ${image ? "Ada" : "Tidak ada"}`
     )
-    .setImage(image)
     .setFooter({ text: "BETLEHEM • Inventory System" });
+
+  if (image) embed.setImage(image);
+
+  return embed;
 }
 
 
@@ -149,7 +153,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     const status = interaction.customId.includes("MASUK") ? "MASUK" : "KELUAR";
 
     await interaction.reply({
-      content: "📸 **Upload foto / SS barang sekarang (30 detik)**",
+      content: "📸 Upload foto (opsional, 30 detik). Lewati jika tidak ada.",
       ephemeral: true
     });
 
@@ -161,6 +165,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
       filter,
       time: 30000
     });
+
+    let sudahKirim = false;
 
     collector.on("collect", async (msg) => {
       const url = msg.attachments.first().url;
@@ -178,14 +184,26 @@ client.on(Events.InteractionCreate, async (interaction) => {
         components: [getPanelButtons()]
       });
 
+      // 🧹 auto delete foto
+      setTimeout(() => msg.delete().catch(() => {}), 1000);
+
+      sudahKirim = true;
       collector.stop();
     });
 
-    collector.on("end", async (collected) => {
-      if (collected.size === 0) {
+    collector.on("end", async () => {
+      if (!sudahKirim) {
+        const embed = generateEmbed(
+          nama,
+          jumlah,
+          status,
+          keterangan,
+          null
+        );
+
         await interaction.followUp({
-          content: "❌ Gagal: tidak ada foto diupload",
-          ephemeral: true
+          embeds: [embed],
+          components: [getPanelButtons()]
         });
       }
     });
