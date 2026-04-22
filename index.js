@@ -42,12 +42,19 @@ function getPanelButtons() {
 
 
 // =======================
-// 📦 EMBED INVENTORY
+// 📦 EMBED INVENTORY (WITH ICON)
 // =======================
-function generateEmbed(nama, jumlah, status, keterangan, image) {
+function generateEmbed(nama, jumlah, status, keterangan, image, guild, user) {
+  const icon = guild.iconURL({ dynamic: true });
+
   const embed = new EmbedBuilder()
     .setColor(status === "MASUK" ? 0x16a34a : 0xdc2626)
     .setTitle(status === "MASUK" ? "🟢 BARANG MASUK" : "🔴 BARANG KELUAR")
+    .setThumbnail(icon)
+    .setAuthor({
+      name: user.tag,
+      iconURL: user.displayAvatarURL()
+    })
     .setDescription(
       `📅 **${new Date().toLocaleDateString("id-ID")}**\n` +
       `━━━━━━━━━━━━━━━━━━\n\n` +
@@ -56,7 +63,10 @@ function generateEmbed(nama, jumlah, status, keterangan, image) {
       `**Keterangan  :** ${keterangan}\n` +
       `**Foto        :** ${image ? "Ada" : "Tidak ada"}`
     )
-    .setFooter({ text: "BETLEHEM • Copyright ©️2018 - BTHL" });
+    .setFooter({
+      text: "BETLEHEM • Inventory System",
+      iconURL: icon || undefined
+    });
 
   if (image) embed.setImage(image);
 
@@ -76,28 +86,25 @@ async function sendPanelIfNotExist(client) {
   if (data.messageId) {
     try {
       await channel.messages.fetch(data.messageId);
-      console.log("Panel sudah ada");
       return;
-    } catch {
-      console.log("Panel hilang, kirim ulang...");
-    }
+    } catch {}
   }
 
   const icon = channel.guild.iconURL({ dynamic: true });
 
   const embed = new EmbedBuilder()
-    .setColor(0x5865F2) // 🔥 GANTI WARNA DI SINI
+    .setColor(0x5865F2)
     .setTitle("📦 INVENTORY BETLEHEM")
+    .setThumbnail(icon)
     .setDescription(
       "Kelola barang masuk & keluar dengan mudah.\n\n" +
-      "🟢 **Masuk** = Barang masuk ke inventory\n" +
-      "🔴 **Keluar** = Barang keluar dari inventory\n\n" +
+      "🟢 **Masuk** = Barang masuk\n" +
+      "🔴 **Keluar** = Barang keluar\n\n" +
       "━━━━━━━━━━━━━━━━━━\n" +
       "Klik tombol di bawah untuk mulai input"
     )
-    .setThumbnail(icon)
     .setFooter({
-      text: "BETLEHEM • Copyright ©️2018 - BTHL",
+      text: "BETLEHEM • Inventory System",
       iconURL: icon || undefined
     });
 
@@ -166,7 +173,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     const status = interaction.customId.includes("MASUK") ? "MASUK" : "KELUAR";
 
     await interaction.reply({
-      content: "📸 Upload foto (opsional, 30 detik). Lewati jika tidak ada.",
+      content: "📸 Upload foto (opsional, 30 detik)",
       ephemeral: true
     });
 
@@ -179,7 +186,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       time: 30000
     });
 
-    let sudahKirim = false;
+    let sent = false;
 
     collector.on("collect", async (msg) => {
       const url = msg.attachments.first().url;
@@ -189,7 +196,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
         jumlah,
         status,
         keterangan,
-        url
+        url,
+        interaction.guild,
+        interaction.user
       );
 
       await interaction.followUp({
@@ -197,21 +206,22 @@ client.on(Events.InteractionCreate, async (interaction) => {
         components: [getPanelButtons()]
       });
 
-      // auto delete foto
       setTimeout(() => msg.delete().catch(() => {}), 1000);
 
-      sudahKirim = true;
+      sent = true;
       collector.stop();
     });
 
     collector.on("end", async () => {
-      if (!sudahKirim) {
+      if (!sent) {
         const embed = generateEmbed(
           nama,
           jumlah,
           status,
           keterangan,
-          null
+          null,
+          interaction.guild,
+          interaction.user
         );
 
         await interaction.followUp({
