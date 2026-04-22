@@ -64,7 +64,7 @@ function generateEmbed(nama, jumlah, status, keterangan, image, guild, user) {
       `**Foto        :** ${image ? "Ada" : "Tidak ada"}`
     )
     .setFooter({
-      text: "BETLEHEM • Inventory System",
+      text: "BETLEHEM • Copyright ©️2018 - BTHL",
       iconURL: icon || undefined
     });
 
@@ -104,7 +104,7 @@ async function sendPanelIfNotExist(client) {
       "Klik tombol di bawah untuk mulai input"
     )
     .setFooter({
-      text: "BETLEHEM • Inventory System",
+      text: "BETLEHEM • Copyright ©️2018 - BTHL",
       iconURL: icon || undefined
     });
 
