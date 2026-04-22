@@ -15,7 +15,11 @@ const {
 } = require("discord.js");
 
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds]
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent
+  ]
 });
 
 
@@ -144,13 +148,14 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     const status = interaction.customId.includes("MASUK") ? "MASUK" : "KELUAR";
 
-    // Step 1: kasih instruksi upload
     await interaction.reply({
       content: "📸 **Upload foto / SS barang sekarang (30 detik)**",
       ephemeral: true
     });
 
-    const filter = m => m.author.id === interaction.user.id;
+    const filter = m =>
+      m.author.id === interaction.user.id &&
+      m.attachments.size > 0;
 
     const collector = interaction.channel.createMessageCollector({
       filter,
@@ -158,24 +163,22 @@ client.on(Events.InteractionCreate, async (interaction) => {
     });
 
     collector.on("collect", async (msg) => {
-      if (msg.attachments.size > 0) {
-        const url = msg.attachments.first().url;
+      const url = msg.attachments.first().url;
 
-        const embed = generateEmbed(
-          nama,
-          jumlah,
-          status,
-          keterangan,
-          url
-        );
+      const embed = generateEmbed(
+        nama,
+        jumlah,
+        status,
+        keterangan,
+        url
+      );
 
-        await interaction.followUp({
-          embeds: [embed],
-          components: [getPanelButtons()]
-        });
+      await interaction.followUp({
+        embeds: [embed],
+        components: [getPanelButtons()]
+      });
 
-        collector.stop();
-      }
+      collector.stop();
     });
 
     collector.on("end", async (collected) => {
