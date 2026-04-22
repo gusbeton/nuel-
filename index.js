@@ -56,7 +56,7 @@ function generateEmbed(nama, jumlah, status, keterangan, image) {
       `**Keterangan  :** ${keterangan}\n` +
       `**Foto        :** ${image ? "Ada" : "Tidak ada"}`
     )
-    .setFooter({ text: "BETLEHEM • Inventory System" });
+    .setFooter({ text: "BETLEHEM • Copyright ©️2018 - BTHL" });
 
   if (image) embed.setImage(image);
 
