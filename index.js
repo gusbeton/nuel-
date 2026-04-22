@@ -14,6 +14,8 @@ const {
   EmbedBuilder
 } = require("discord.js");
 
+const { joinVoiceChannel } = require("@discordjs/voice");
+
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -104,7 +106,7 @@ async function sendPanelIfNotExist(client) {
       "Klik tombol di bawah untuk mulai input"
     )
     .setFooter({
-      text: "BETLEHEM •  Copyright ©️2018 - BTHL",
+      text: "BETLEHEM • Copyright ©️2018 - BTHL",
       iconURL: icon || undefined
     });
 
@@ -119,11 +121,42 @@ async function sendPanelIfNotExist(client) {
 
 
 // =======================
+// 🎧 AUTO JOIN VOICE
+// =======================
+async function joinVoice(client) {
+  const data = JSON.parse(fs.readFileSync("./panel.json"));
+
+  try {
+    const channel = await client.channels.fetch(data.voiceChannelId);
+    if (!channel) return console.log("Voice channel tidak ditemukan");
+
+    joinVoiceChannel({
+      channelId: channel.id,
+      guildId: channel.guild.id,
+      adapterCreator: channel.guild.voiceAdapterCreator,
+      selfDeaf: false
+    });
+
+    console.log("Bot masuk voice channel");
+  } catch (err) {
+    console.log("Gagal join voice:", err.message);
+  }
+}
+
+
+// =======================
 // 🚀 READY
 // =======================
 client.once("ready", async () => {
   console.log(`Login sebagai ${client.user.tag}`);
+
+  client.user.setPresence({
+    activities: [{ name: "Inventory BETLEHEM", type: 0 }],
+    status: "online"
+  });
+
   await sendPanelIfNotExist(client);
+  await joinVoice(client);
 });
 
 
@@ -174,7 +207,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     const icon = interaction.guild.iconURL({ dynamic: true });
 
-    // 🔥 EMBED INSTRUKSI
     const notice = new EmbedBuilder()
       .setColor(0x5865F2)
       .setTitle("📸 Upload Foto (Opsional)")
@@ -185,7 +217,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         "👉 **abaikan saja dan tunggu**, data tetap akan dikirim."
       )
       .setFooter({
-        text: "BETLEHEM •  Copyright ©️2018 - BTHL",
+        text: "BETLEHEM • Copyright ©️2018 - BTHL",
         iconURL: icon || undefined
       });
 
