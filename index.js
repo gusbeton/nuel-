@@ -10,11 +10,9 @@ const {
   ModalBuilder,
   TextInputBuilder,
   TextInputStyle,
-  AttachmentBuilder,
-  Events
+  Events,
+  EmbedBuilder
 } = require("discord.js");
-
-const { createCanvas } = require("canvas");
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds]
@@ -22,49 +20,22 @@ const client = new Client({
 
 
 // =======================
-// 🎨 CANVAS
+// 📦 EMBED INVENTORY
 // =======================
-async function generateInventory(nama, jumlah, status, keterangan) {
-  const canvas = createCanvas(800, 400);
-  const ctx = canvas.getContext("2d");
-
+function generateInventoryEmbed(nama, jumlah, status, keterangan) {
   const tanggal = new Date().toLocaleDateString("id-ID");
 
-  ctx.fillStyle = "#0f172a";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  ctx.strokeStyle = "#38bdf8";
-  ctx.lineWidth = 4;
-  ctx.strokeRect(10, 10, 780, 380);
-
-  ctx.fillStyle = "#ffffff";
-  ctx.font = "bold 30px Sans";
-  ctx.fillText("INVENTORY CARD", 220, 60);
-
-  ctx.font = "20px Sans";
-  ctx.fillText("BETLEHEM", 330, 90);
-
-  ctx.beginPath();
-  ctx.moveTo(40, 110);
-  ctx.lineTo(760, 110);
-  ctx.stroke();
-
-  ctx.font = "22px Sans";
-  ctx.fillStyle = "#ffffff";
-
-  ctx.fillText(`Nama Barang : ${nama}`, 60, 160);
-  ctx.fillText(`Jumlah      : ${jumlah}`, 60, 200);
-
-  ctx.fillStyle = status === "MASUK" ? "#22c55e" : "#ef4444";
-  ctx.fillText(`Status      : ${status}`, 60, 240);
-
-  ctx.fillStyle = "#ffffff";
-  ctx.fillText(`Tanggal     : ${tanggal}`, 60, 280);
-  ctx.fillText(`Keterangan  : ${keterangan}`, 60, 320);
-
-  return new AttachmentBuilder(canvas.toBuffer(), {
-    name: "inventory.png"
-  });
+  return new EmbedBuilder()
+    .setColor(status === "MASUK" ? 0x22c55e : 0xef4444)
+    .setTitle("📦 INVENTORY CARD")
+    .setDescription(
+      `**Nama Barang :** ${nama}\n` +
+      `**Jumlah      :** ${jumlah}\n` +
+      `**Status      :** ${status}\n` +
+      `**Tanggal     :** ${tanggal}\n` +
+      `**Keterangan  :** ${keterangan}`
+    )
+    .setFooter({ text: "BETLEHEM • Inventory System" });
 }
 
 
@@ -165,10 +136,10 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     const status = interaction.customId.includes("MASUK") ? "MASUK" : "KELUAR";
 
-    const file = await generateInventory(nama, jumlah, status, keterangan);
+    const embed = generateInventoryEmbed(nama, jumlah, status, keterangan);
 
     await interaction.reply({
-      files: [file]
+      embeds: [embed]
     });
   }
 
