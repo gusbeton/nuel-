@@ -20,13 +20,31 @@ const client = new Client({
 
 
 // =======================
+// 🔘 BUTTON PANEL
+// =======================
+function getPanelButtons() {
+  return new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId("masuk")
+      .setLabel("📥 Barang Masuk")
+      .setStyle(ButtonStyle.Success),
+
+    new ButtonBuilder()
+      .setCustomId("keluar")
+      .setLabel("📤 Barang Keluar")
+      .setStyle(ButtonStyle.Danger)
+  );
+}
+
+
+// =======================
 // 📦 EMBED INVENTORY
 // =======================
 function generateInventoryEmbed(nama, jumlah, status, keterangan) {
   const tanggal = new Date().toLocaleDateString("id-ID");
 
   return new EmbedBuilder()
-    .setColor(status === "MASUK" ? 0x22c55e : 0xef4444)
+    .setColor(status === "MASUK" ? 0x16a34a : 0xdc2626)
     .setTitle("📦 INVENTORY CARD")
     .setDescription(
       `**Nama Barang :** ${nama}\n` +
@@ -40,7 +58,7 @@ function generateInventoryEmbed(nama, jumlah, status, keterangan) {
 
 
 // =======================
-// 📦 PANEL AUTO
+// 📦 PANEL AUTO (ANTI SPAM)
 // =======================
 async function sendPanelIfNotExist(client) {
   const data = JSON.parse(fs.readFileSync("./panel.json"));
@@ -58,21 +76,9 @@ async function sendPanelIfNotExist(client) {
     }
   }
 
-  const row = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId("masuk")
-      .setLabel("📥 Barang Masuk")
-      .setStyle(ButtonStyle.Success),
-
-    new ButtonBuilder()
-      .setCustomId("keluar")
-      .setLabel("📤 Barang Keluar")
-      .setStyle(ButtonStyle.Danger)
-  );
-
   const msg = await channel.send({
     content: "📦 **INVENTORY BETLEHEM**\nKlik tombol di bawah:",
-    components: [row]
+    components: [getPanelButtons()]
   });
 
   data.messageId = msg.id;
@@ -96,7 +102,7 @@ client.once("ready", async () => {
 // =======================
 client.on(Events.InteractionCreate, async (interaction) => {
 
-  // BUTTON
+  // 🔘 BUTTON CLICK
   if (interaction.isButton()) {
     const status = interaction.customId === "masuk" ? "MASUK" : "KELUAR";
 
@@ -128,7 +134,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
     await interaction.showModal(modal);
   }
 
-  // MODAL
+
+  // 📥 MODAL SUBMIT
   if (interaction.isModalSubmit()) {
     const nama = interaction.fields.getTextInputValue("nama");
     const jumlah = interaction.fields.getTextInputValue("jumlah");
@@ -139,7 +146,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
     const embed = generateInventoryEmbed(nama, jumlah, status, keterangan);
 
     await interaction.reply({
-      embeds: [embed]
+      embeds: [embed],
+      components: [getPanelButtons()] // 🔥 INI YANG BIKIN NO SCROLL
     });
   }
 
