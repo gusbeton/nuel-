@@ -38,31 +38,26 @@ function getPanelButtons() {
 
 
 // =======================
-// 📦 EMBED INVENTORY (FINAL CLEAN)
+// 📦 EMBED FINAL
 // =======================
-function generateInventoryEmbed(nama, jumlah, status, keterangan) {
-  const tanggal = new Date().toLocaleDateString("id-ID");
-
+function generateEmbed(nama, jumlah, status, keterangan, image) {
   return new EmbedBuilder()
     .setColor(status === "MASUK" ? 0x16a34a : 0xdc2626)
-    .setTitle(
-      status === "MASUK"
-        ? "🟢 BARANG MASUK"
-        : "🔴 BARANG KELUAR"
-    )
+    .setTitle(status === "MASUK" ? "🟢 BARANG MASUK" : "🔴 BARANG KELUAR")
     .setDescription(
-      `📅 **${tanggal}**\n` +
+      `📅 **${new Date().toLocaleDateString("id-ID")}**\n` +
       `━━━━━━━━━━━━━━━━━━\n\n` +
       `**Nama Barang :** ${nama}\n` +
       `**Jumlah      :** ${jumlah}\n` +
       `**Keterangan  :** ${keterangan}`
     )
+    .setImage(image)
     .setFooter({ text: "BETLEHEM • Inventory System" });
 }
 
 
 // =======================
-// 📦 PANEL AUTO (ANTI SPAM)
+// 📦 PANEL AUTO
 // =======================
 async function sendPanelIfNotExist(client) {
   const data = JSON.parse(fs.readFileSync("./panel.json"));
@@ -92,8 +87,6 @@ async function sendPanelIfNotExist(client) {
 
   data.messageId = msg.id;
   fs.writeFileSync("./panel.json", JSON.stringify(data, null, 2));
-
-  console.log("Panel dikirim");
 }
 
 
@@ -111,7 +104,7 @@ client.once("ready", async () => {
 // =======================
 client.on(Events.InteractionCreate, async (interaction) => {
 
-  // 🔘 BUTTON CLICK
+  // BUTTON
   if (interaction.isButton()) {
     const status = interaction.customId === "masuk" ? "MASUK" : "KELUAR";
 
@@ -143,8 +136,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     await interaction.showModal(modal);
   }
 
-
-  // 📥 MODAL SUBMIT
+  // MODAL SUBMIT
   if (interaction.isModalSubmit()) {
     const nama = interaction.fields.getTextInputValue("nama");
     const jumlah = interaction.fields.getTextInputValue("jumlah");
@@ -152,11 +144,47 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     const status = interaction.customId.includes("MASUK") ? "MASUK" : "KELUAR";
 
-    const embed = generateInventoryEmbed(nama, jumlah, status, keterangan);
-
+    // Step 1: kasih instruksi upload
     await interaction.reply({
-      embeds: [embed],
-      components: [getPanelButtons()] // 🔥 NO SCROLL SYSTEM
+      content: "📸 **Upload foto / SS barang sekarang (30 detik)**",
+      ephemeral: true
+    });
+
+    const filter = m => m.author.id === interaction.user.id;
+
+    const collector = interaction.channel.createMessageCollector({
+      filter,
+      time: 30000
+    });
+
+    collector.on("collect", async (msg) => {
+      if (msg.attachments.size > 0) {
+        const url = msg.attachments.first().url;
+
+        const embed = generateEmbed(
+          nama,
+          jumlah,
+          status,
+          keterangan,
+          url
+        );
+
+        await interaction.followUp({
+          embeds: [embed],
+          components: [getPanelButtons()]
+        });
+
+        collector.stop();
+      }
+    });
+
+    collector.on("end", async (collected) => {
+      if (collected.size === 0) {
+        await interaction.followUp({
+          content: "❌ Gagal: tidak ada foto diupload",
+          ephemeral: true
+        });
+      }
     });
   }
 
