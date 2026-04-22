@@ -42,7 +42,7 @@ function getPanelButtons() {
 
 
 // =======================
-// 📦 EMBED INVENTORY (WITH ICON)
+// 📦 EMBED INVENTORY
 // =======================
 function generateEmbed(nama, jumlah, status, keterangan, image, guild, user) {
   const icon = guild.iconURL({ dynamic: true });
@@ -64,7 +64,7 @@ function generateEmbed(nama, jumlah, status, keterangan, image, guild, user) {
       `**Foto        :** ${image ? "Ada" : "Tidak ada"}`
     )
     .setFooter({
-      text: "BETLEHEM • Copyright ©️2018 - BTHL",
+      text: "BETLEHEM • Inventory System",
       iconURL: icon || undefined
     });
 
@@ -75,7 +75,7 @@ function generateEmbed(nama, jumlah, status, keterangan, image, guild, user) {
 
 
 // =======================
-// 📦 PANEL AUTO (CLEAN)
+// 📦 PANEL AUTO
 // =======================
 async function sendPanelIfNotExist(client) {
   const data = JSON.parse(fs.readFileSync("./panel.json"));
@@ -104,7 +104,7 @@ async function sendPanelIfNotExist(client) {
       "Klik tombol di bawah untuk mulai input"
     )
     .setFooter({
-      text: "BETLEHEM • Copyright ©️2018 - BTHL",
+      text: "BETLEHEM •  Copyright ©️2018 - BTHL",
       iconURL: icon || undefined
     });
 
@@ -172,8 +172,25 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     const status = interaction.customId.includes("MASUK") ? "MASUK" : "KELUAR";
 
+    const icon = interaction.guild.iconURL({ dynamic: true });
+
+    // 🔥 EMBED INSTRUKSI
+    const notice = new EmbedBuilder()
+      .setColor(0x5865F2)
+      .setTitle("📸 Upload Foto (Opsional)")
+      .setThumbnail(icon)
+      .setDescription(
+        "Silakan upload foto / SS barang dalam **30 detik**.\n\n" +
+        "Jika tidak ada foto:\n" +
+        "👉 **abaikan saja dan tunggu**, data tetap akan dikirim."
+      )
+      .setFooter({
+        text: "BETLEHEM •  Copyright ©️2018 - BTHL",
+        iconURL: icon || undefined
+      });
+
     await interaction.reply({
-      content: "📸 Upload foto (opsional, 30 detik)",
+      embeds: [notice],
       ephemeral: true
     });
 
