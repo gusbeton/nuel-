@@ -38,7 +38,7 @@ function getPanelButtons() {
 
 
 // =======================
-// 📦 EMBED INVENTORY (FOCUS STATUS)
+// 📦 EMBED INVENTORY (FINAL CLEAN)
 // =======================
 function generateInventoryEmbed(nama, jumlah, status, keterangan) {
   const tanggal = new Date().toLocaleDateString("id-ID");
@@ -52,14 +52,10 @@ function generateInventoryEmbed(nama, jumlah, status, keterangan) {
     )
     .setDescription(
       `📅 **${tanggal}**\n` +
-
       `━━━━━━━━━━━━━━━━━━\n\n` +
-
       `**Nama Barang :** ${nama}\n` +
-      `**Jumlah      :** ${jumlah}\n\n` +
-
-      `📝 **Keterangan**\n` +
-      `${keterangan}`
+      `**Jumlah      :** ${jumlah}\n` +
+      `**Keterangan  :** ${keterangan}`
     )
     .setFooter({ text: "BETLEHEM • Inventory System" });
 }
