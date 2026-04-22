@@ -1,7 +1,6 @@
 {
   "name": "betlehem-inventory-bot",
   "version": "1.0.0",
-  "description": "Inventory Bot BETLEHEM",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
