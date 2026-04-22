@@ -38,7 +38,7 @@ function getPanelButtons() {
 
 
 // =======================
-// 📦 EMBED INVENTORY
+// 📦 EMBED INVENTORY (POLISHED)
 // =======================
 function generateInventoryEmbed(nama, jumlah, status, keterangan) {
   const tanggal = new Date().toLocaleDateString("id-ID");
@@ -49,9 +49,15 @@ function generateInventoryEmbed(nama, jumlah, status, keterangan) {
     .setDescription(
       `**Nama Barang :** ${nama}\n` +
       `**Jumlah      :** ${jumlah}\n` +
-      `**Status      :** ${status}\n` +
-      `**Tanggal     :** ${tanggal}\n` +
-      `**Keterangan  :** ${keterangan}`
+      `**Status      :** ${status}\n\n` +
+
+      `━━━━━━━━━━━━━━━━━━\n` +
+
+      `📅 **TANGGAL**\n` +
+      `➡️ **${tanggal}**\n\n` +
+
+      `📝 **KETERANGAN**\n` +
+      `➡️ **${keterangan}**`
     )
     .setFooter({ text: "BETLEHEM • Inventory System" });
 }
@@ -77,7 +83,12 @@ async function sendPanelIfNotExist(client) {
   }
 
   const msg = await channel.send({
-    content: "📦 **INVENTORY BETLEHEM**\nKlik tombol di bawah:",
+    content:
+      "📦 **INVENTORY BETLEHEM**\n" +
+      "Klik tombol di bawah:\n\n" +
+      "🟢 **Masuk** = Barang masuk\n" +
+      "🔴 **Keluar** = Barang keluar\n" +
+      "━━━━━━━━━━━━━━━━━━",
     components: [getPanelButtons()]
   });
 
@@ -147,7 +158,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     await interaction.reply({
       embeds: [embed],
-      components: [getPanelButtons()] // 🔥 INI YANG BIKIN NO SCROLL
+      components: [getPanelButtons()] // 🔥 NO SCROLL SYSTEM
     });
   }
 
