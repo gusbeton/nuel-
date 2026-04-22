@@ -1,4 +1,5 @@
 require("dotenv").config();
+const fs = require("fs");
 
 const {
   Client,
@@ -21,7 +22,7 @@ const client = new Client({
 
 
 // =======================
-// 🎨 CANVAS FUNCTION
+// 🎨 CANVAS
 // =======================
 async function generateInventory(nama, jumlah, status, keterangan) {
   const canvas = createCanvas(800, 400);
@@ -29,16 +30,13 @@ async function generateInventory(nama, jumlah, status, keterangan) {
 
   const tanggal = new Date().toLocaleDateString("id-ID");
 
-  // background
   ctx.fillStyle = "#0f172a";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // border
   ctx.strokeStyle = "#38bdf8";
   ctx.lineWidth = 4;
   ctx.strokeRect(10, 10, 780, 380);
 
-  // title
   ctx.fillStyle = "#ffffff";
   ctx.font = "bold 30px Sans";
   ctx.fillText("INVENTORY CARD", 220, 60);
@@ -46,20 +44,17 @@ async function generateInventory(nama, jumlah, status, keterangan) {
   ctx.font = "20px Sans";
   ctx.fillText("BETLEHEM", 330, 90);
 
-  // garis
   ctx.beginPath();
   ctx.moveTo(40, 110);
   ctx.lineTo(760, 110);
   ctx.stroke();
 
-  // isi
   ctx.font = "22px Sans";
   ctx.fillStyle = "#ffffff";
 
   ctx.fillText(`Nama Barang : ${nama}`, 60, 160);
   ctx.fillText(`Jumlah      : ${jumlah}`, 60, 200);
 
-  // warna status
   ctx.fillStyle = status === "MASUK" ? "#22c55e" : "#ef4444";
   ctx.fillText(`Status      : ${status}`, 60, 240);
 
@@ -74,48 +69,64 @@ async function generateInventory(nama, jumlah, status, keterangan) {
 
 
 // =======================
+// 📦 PANEL AUTO
+// =======================
+async function sendPanelIfNotExist(client) {
+  const data = JSON.parse(fs.readFileSync("./panel.json"));
+
+  const channel = await client.channels.fetch(data.channelId);
+  if (!channel) return console.log("Channel tidak ditemukan");
+
+  if (data.messageId) {
+    try {
+      await channel.messages.fetch(data.messageId);
+      console.log("Panel sudah ada");
+      return;
+    } catch {
+      console.log("Panel hilang, kirim ulang...");
+    }
+  }
+
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId("masuk")
+      .setLabel("📥 Barang Masuk")
+      .setStyle(ButtonStyle.Success),
+
+    new ButtonBuilder()
+      .setCustomId("keluar")
+      .setLabel("📤 Barang Keluar")
+      .setStyle(ButtonStyle.Danger)
+  );
+
+  const msg = await channel.send({
+    content: "📦 **INVENTORY BETLEHEM**\nKlik tombol di bawah:",
+    components: [row]
+  });
+
+  data.messageId = msg.id;
+  fs.writeFileSync("./panel.json", JSON.stringify(data, null, 2));
+
+  console.log("Panel dikirim");
+}
+
+
+// =======================
 // 🚀 READY
 // =======================
-client.once("ready", () => {
+client.once("ready", async () => {
   console.log(`Login sebagai ${client.user.tag}`);
+  await sendPanelIfNotExist(client);
 });
 
 
 // =======================
-// 📦 COMMAND PANEL
+// ⚙️ INTERACTION
 // =======================
 client.on(Events.InteractionCreate, async (interaction) => {
 
-  // =======================
-  // BUTTON PANEL
-  // =======================
-  if (interaction.isChatInputCommand()) {
-    if (interaction.commandName === "panel") {
-
-      const row = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId("masuk")
-          .setLabel("📥 Barang Masuk")
-          .setStyle(ButtonStyle.Success),
-
-        new ButtonBuilder()
-          .setCustomId("keluar")
-          .setLabel("📤 Barang Keluar")
-          .setStyle(ButtonStyle.Danger)
-      );
-
-      await interaction.reply({
-        content: "📦 **INVENTORY BETLEHEM**\nKlik tombol di bawah:",
-        components: [row]
-      });
-    }
-  }
-
-  // =======================
-  // BUTTON CLICK
-  // =======================
+  // BUTTON
   if (interaction.isButton()) {
-
     const status = interaction.customId === "masuk" ? "MASUK" : "KELUAR";
 
     const modal = new ModalBuilder()
@@ -146,11 +157,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
     await interaction.showModal(modal);
   }
 
-  // =======================
-  // MODAL SUBMIT
-  // =======================
+  // MODAL
   if (interaction.isModalSubmit()) {
-
     const nama = interaction.fields.getTextInputValue("nama");
     const jumlah = interaction.fields.getTextInputValue("jumlah");
     const keterangan = interaction.fields.getTextInputValue("keterangan");
