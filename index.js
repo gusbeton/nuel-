@@ -42,7 +42,7 @@ function getPanelButtons() {
 
 
 // =======================
-// 📦 EMBED FLEXIBLE
+// 📦 EMBED INVENTORY
 // =======================
 function generateEmbed(nama, jumlah, status, keterangan, image) {
   const embed = new EmbedBuilder()
@@ -65,7 +65,7 @@ function generateEmbed(nama, jumlah, status, keterangan, image) {
 
 
 // =======================
-// 📦 PANEL AUTO
+// 📦 PANEL AUTO (CLEAN)
 // =======================
 async function sendPanelIfNotExist(client) {
   const data = JSON.parse(fs.readFileSync("./panel.json"));
@@ -83,13 +83,26 @@ async function sendPanelIfNotExist(client) {
     }
   }
 
+  const icon = channel.guild.iconURL({ dynamic: true });
+
+  const embed = new EmbedBuilder()
+    .setColor(0x5865F2) // 🔥 GANTI WARNA DI SINI
+    .setTitle("📦 INVENTORY BETLEHEM")
+    .setDescription(
+      "Kelola barang masuk & keluar dengan mudah.\n\n" +
+      "🟢 **Masuk** = Barang masuk ke inventory\n" +
+      "🔴 **Keluar** = Barang keluar dari inventory\n\n" +
+      "━━━━━━━━━━━━━━━━━━\n" +
+      "Klik tombol di bawah untuk mulai input"
+    )
+    .setThumbnail(icon)
+    .setFooter({
+      text: "BETLEHEM • Inventory System",
+      iconURL: icon || undefined
+    });
+
   const msg = await channel.send({
-    content:
-      "📦 **INVENTORY BETLEHEM**\n" +
-      "Klik tombol di bawah:\n\n" +
-      "🟢 **Masuk** = Barang masuk\n" +
-      "🔴 **Keluar** = Barang keluar\n" +
-      "━━━━━━━━━━━━━━━━━━",
+    embeds: [embed],
     components: [getPanelButtons()]
   });
 
@@ -184,7 +197,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         components: [getPanelButtons()]
       });
 
-      // 🧹 auto delete foto
+      // auto delete foto
       setTimeout(() => msg.delete().catch(() => {}), 1000);
 
       sudahKirim = true;
