@@ -26,32 +26,63 @@ const client = new Client({
 
 
 // =======================
+// 💵 FORMAT DOLLAR
+// =======================
+function formatDollar(angka) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD"
+  }).format(angka);
+}
+
+
+// =======================
+// 💰 SALDO SYSTEM
+// =======================
+function getSaldo() {
+  if (!fs.existsSync("./saldo.json")) {
+    fs.writeFileSync("./saldo.json", JSON.stringify({ saldo: 0 }, null, 2));
+  }
+  return JSON.parse(fs.readFileSync("./saldo.json")).saldo;
+}
+
+function setSaldo(newSaldo) {
+  fs.writeFileSync("./saldo.json", JSON.stringify({ saldo: newSaldo }, null, 2));
+}
+
+
+// =======================
 // 🔘 BUTTON PANEL
 // =======================
 function getPanelButtons() {
   return new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId("masuk")
-      .setLabel("📥 Barang Masuk")
+      .setLabel("💰 Uang Masuk")
       .setStyle(ButtonStyle.Success),
 
     new ButtonBuilder()
       .setCustomId("keluar")
-      .setLabel("📤 Barang Keluar")
+      .setLabel("💸 Uang Keluar")
       .setStyle(ButtonStyle.Danger)
   );
 }
 
 
 // =======================
-// 📦 EMBED INVENTORY
+// 💵 EMBED KEUANGAN
 // =======================
-function generateEmbed(nama, jumlah, status, keterangan, image, guild, user) {
+function generateEmbed(jumlah, status, keterangan, image, guild, user) {
   const icon = guild.iconURL({ dynamic: true });
+  const saldo = getSaldo();
 
   const embed = new EmbedBuilder()
     .setColor(status === "MASUK" ? 0x16a34a : 0xdc2626)
-    .setTitle(status === "MASUK" ? "🟢 BARANG MASUK" : "🔴 BARANG KELUAR")
+    .setTitle(
+      status === "MASUK"
+        ? "🟢 PEMASUKAN UANG"
+        : "🔴 PENGELUARAN UANG"
+    )
     .setThumbnail(icon)
     .setAuthor({
       name: user.tag,
@@ -60,10 +91,10 @@ function generateEmbed(nama, jumlah, status, keterangan, image, guild, user) {
     .setDescription(
       `📅 **${new Date().toLocaleDateString("id-ID")}**\n` +
       `━━━━━━━━━━━━━━━━━━\n\n` +
-      `**Nama Barang :** ${nama}\n` +
-      `**Jumlah      :** ${jumlah}\n` +
-      `**Keterangan  :** ${keterangan}\n` +
-      `**Foto        :** ${image ? "Ada" : "Tidak ada"}`
+      `💰 **Jumlah :** ${formatDollar(jumlah)}\n` +
+      `💳 **Saldo  :** ${formatDollar(saldo)}\n` +
+      `📝 **Keterangan :** ${keterangan}\n` +
+      `📸 **Foto :** ${image ? "Ada" : "Tidak ada"}`
     )
     .setFooter({
       text: "BETLEHEM • Copyright ©️2018 - BTHL",
@@ -96,12 +127,12 @@ async function sendPanelIfNotExist(client) {
 
   const embed = new EmbedBuilder()
     .setColor(0x5865F2)
-    .setTitle("📦 INVENTORY BETLEHEM")
+    .setTitle("💵 KEUANGAN BETLEHEM")
     .setThumbnail(icon)
     .setDescription(
-      "Kelola barang masuk & keluar dengan mudah.\n\n" +
-      "🟢 **Masuk** = Barang masuk\n" +
-      "🔴 **Keluar** = Barang keluar\n\n" +
+      "Kelola pemasukan & pengeluaran uang dengan mudah.\n\n" +
+      "🟢 **Masuk** = Uang masuk\n" +
+      "🔴 **Keluar** = Uang keluar\n\n" +
       "━━━━━━━━━━━━━━━━━━\n" +
       "Klik tombol di bawah untuk mulai input"
     )
@@ -151,7 +182,7 @@ client.once("ready", async () => {
   console.log(`Login sebagai ${client.user.tag}`);
 
   client.user.setPresence({
-    activities: [{ name: "Inventory BETLEHEM", type: 0 }],
+    activities: [{ name: "Sistem Keuangan", type: 0 }],
     status: "online"
   });
 
@@ -171,16 +202,11 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     const modal = new ModalBuilder()
       .setCustomId(`modal_${status}`)
-      .setTitle(`Barang ${status}`);
-
-    const nama = new TextInputBuilder()
-      .setCustomId("nama")
-      .setLabel("Nama Barang")
-      .setStyle(TextInputStyle.Short);
+      .setTitle(`Input ${status === "MASUK" ? "Uang Masuk" : "Uang Keluar"}`);
 
     const jumlah = new TextInputBuilder()
       .setCustomId("jumlah")
-      .setLabel("Jumlah")
+      .setLabel("Jumlah Uang")
       .setStyle(TextInputStyle.Short);
 
     const ket = new TextInputBuilder()
@@ -189,7 +215,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
       .setStyle(TextInputStyle.Paragraph);
 
     modal.addComponents(
-      new ActionRowBuilder().addComponents(nama),
       new ActionRowBuilder().addComponents(jumlah),
       new ActionRowBuilder().addComponents(ket)
     );
@@ -199,11 +224,27 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
   // MODAL SUBMIT
   if (interaction.isModalSubmit()) {
-    const nama = interaction.fields.getTextInputValue("nama");
     const jumlah = interaction.fields.getTextInputValue("jumlah");
     const keterangan = interaction.fields.getTextInputValue("keterangan");
 
+    if (isNaN(jumlah)) {
+      return interaction.reply({
+        content: "❌ Jumlah uang harus berupa angka!",
+        ephemeral: true
+      });
+    }
+
     const status = interaction.customId.includes("MASUK") ? "MASUK" : "KELUAR";
+
+    let saldo = getSaldo();
+
+    if (status === "MASUK") {
+      saldo += Number(jumlah);
+    } else {
+      saldo -= Number(jumlah);
+    }
+
+    setSaldo(saldo);
 
     const icon = interaction.guild.iconURL({ dynamic: true });
 
@@ -212,7 +253,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       .setTitle("📸 Upload Foto (Opsional)")
       .setThumbnail(icon)
       .setDescription(
-        "Silakan upload foto / SS barang dalam **30 detik**.\n\n" +
+        "Silakan upload foto / bukti dalam **30 detik**.\n\n" +
         "Jika tidak ada foto:\n" +
         "👉 **abaikan saja dan tunggu**, data tetap akan dikirim."
       )
@@ -226,13 +267,12 @@ client.on(Events.InteractionCreate, async (interaction) => {
       ephemeral: true
     });
 
-    const filter = m =>
-      m.author.id === interaction.user.id &&
-      m.attachments.size > 0;
-
     const collector = interaction.channel.createMessageCollector({
-      filter,
-      time: 30000
+      filter: m =>
+        m.author.id === interaction.user.id &&
+        m.attachments.size > 0,
+      time: 30000,
+      max: 1
     });
 
     let sent = false;
@@ -241,7 +281,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
       const url = msg.attachments.first().url;
 
       const embed = generateEmbed(
-        nama,
         jumlah,
         status,
         keterangan,
@@ -255,7 +294,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         components: [getPanelButtons()]
       });
 
-      setTimeout(() => msg.delete().catch(() => {}), 1000);
+      await msg.delete().catch(() => {});
 
       sent = true;
       collector.stop();
@@ -264,7 +303,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
     collector.on("end", async () => {
       if (!sent) {
         const embed = generateEmbed(
-          nama,
           jumlah,
           status,
           keterangan,
