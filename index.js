@@ -270,7 +270,7 @@ async function joinVoice() {
 // 🔊 VOICE LOG (SEMUA VOICE DI SERVER)
 // =======================
 // Log masuk / keluar dikirim ke chat bawaan voice channel itu sendiri.
-const VOICE_JOIN_COLOR = 0x00e5ff;  // cyan
+const VOICE_JOIN_COLOR = 0xfee75c;  // kuning
 const VOICE_LEAVE_COLOR = 0xff0000; // merah
 
 // key: `${guildId}-${userId}` → { channelId, since }
@@ -289,18 +289,11 @@ function formatDurasi(ms) {
   return parts.join(" ");
 }
 
-function userVoiceText(channel) {
-  const jumlah = channel.members.filter(m => !m.user.bot).size;
-  const limit = channel.userLimit || "∞";
-  return `User Voice : ${jumlah}/${limit}`;
-}
-
 async function kirimVoiceLog(channel, color, text) {
   if (!channel?.isTextBased?.()) return;
   const embed = new EmbedBuilder()
     .setColor(color)
-    .setDescription(text)
-    .addFields({ name: userVoiceText(channel), value: "​" });
+    .setDescription(text);
 
   await channel.send({ embeds: [embed], allowedMentions: { parse: [] } })
     .catch(err => console.log(`⚠️ Gagal kirim voice log ke #${channel.name}:`, err.message));
