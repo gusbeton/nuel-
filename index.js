@@ -267,10 +267,104 @@ async function joinVoice() {
 }
 
 // =======================
+// 🔊 VOICE LOG (SEMUA VOICE DI SERVER)
+// =======================
+// Log masuk / keluar dikirim ke chat bawaan voice channel itu sendiri.
+const VOICE_JOIN_COLOR = 0x00e5ff;  // cyan
+const VOICE_LEAVE_COLOR = 0xff0000; // merah
+
+// key: `${guildId}-${userId}` → { channelId, since }
+const voiceSessions = new Map();
+
+function formatDurasi(ms) {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const jam = Math.floor(total / 3600);
+  const menit = Math.floor((total % 3600) / 60);
+  const detik = total % 60;
+
+  const parts = [];
+  if (jam) parts.push(`${jam} jam`);
+  if (menit) parts.push(`${menit} menit`);
+  if (detik || parts.length === 0) parts.push(`${detik} detik`);
+  return parts.join(" ");
+}
+
+function userVoiceText(channel) {
+  const jumlah = channel.members.filter(m => !m.user.bot).size;
+  const limit = channel.userLimit || "∞";
+  return `User Voice : ${jumlah}/${limit}`;
+}
+
+async function kirimVoiceLog(channel, color, text) {
+  if (!channel?.isTextBased?.()) return;
+  const embed = new EmbedBuilder()
+    .setColor(color)
+    .setDescription(text)
+    .addFields({ name: userVoiceText(channel), value: "​" });
+
+  await channel.send({ embeds: [embed], allowedMentions: { parse: [] } })
+    .catch(err => console.log(`⚠️ Gagal kirim voice log ke #${channel.name}:`, err.message));
+}
+
+client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
+  try {
+    // Abaikan mute / deafen / stream — cuma peduli pindah channel
+    if (oldState.channelId === newState.channelId) return;
+
+    const member = newState.member || oldState.member;
+    if (!member || member.user.bot) return;
+
+    const key = `${newState.guild.id}-${member.id}`;
+
+    // ===== KELUAR / PINDAH DARI CHANNEL LAMA =====
+    if (oldState.channel) {
+      const sesi = voiceSessions.get(key);
+      const durasi = sesi && sesi.channelId === oldState.channelId
+        ? ` setelah ${formatDurasi(Date.now() - sesi.since)}`
+        : "";
+      const pindah = newState.channel ? ` dan pindah ke ${newState.channel}` : "";
+
+      await kirimVoiceLog(
+        oldState.channel,
+        VOICE_LEAVE_COLOR,
+        `${member} meninggalkan voice${durasi}${pindah}.`
+      );
+      voiceSessions.delete(key);
+    }
+
+    // ===== MASUK KE CHANNEL BARU =====
+    if (newState.channel) {
+      voiceSessions.set(key, { channelId: newState.channelId, since: Date.now() });
+      await kirimVoiceLog(
+        newState.channel,
+        VOICE_JOIN_COLOR,
+        `${member} bergabung ke dalam voice channel.`
+      );
+    }
+  } catch (err) {
+    console.log("❌ Error voice log:", err);
+  }
+});
+
+// Orang yang sudah di voice saat bot nyala → mulai dihitung dari sekarang
+function seedVoiceSessions() {
+  const now = Date.now();
+  for (const guild of client.guilds.cache.values()) {
+    for (const vs of guild.voiceStates.cache.values()) {
+      if (vs.channelId) {
+        voiceSessions.set(`${guild.id}-${vs.id}`, { channelId: vs.channelId, since: now });
+      }
+    }
+  }
+}
+
+// =======================
 // 🚀 READY
 // =======================
 client.once(Events.ClientReady, async () => {
   console.log(`Login sebagai ${client.user.tag}`);
+
+  seedVoiceSessions();
 
   client.user.setPresence({
     activities: [{ name: "Sistem Keuangan", type: 0 }],
